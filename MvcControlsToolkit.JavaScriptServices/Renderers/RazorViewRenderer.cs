@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
 
@@ -18,6 +19,8 @@ namespace MvcControlsToolkit.JavaScriptServices
         private IRazorViewEngine _viewEngine;
         private ITempDataProvider _tempDataProvider;
         private IServiceProvider _serviceProvider;
+        private ActionContext actionContext;
+        IView view;
         public RazorViewRenderer(
             IRazorViewEngine viewEngine,
             ITempDataProvider tempDataProvider,
@@ -27,28 +30,9 @@ namespace MvcControlsToolkit.JavaScriptServices
             _tempDataProvider = tempDataProvider;
             _serviceProvider = serviceProvider;
         }
-        public async Task<string> RenderViewToStringAsync<TModel>(string name, TModel model)
+        public RazorViewRenderer PrepareView(string viewName)
         {
-            using(var output = new StringWriter())
-            {
-                await RenderViewToStreamAsync<TModel>(output, name, model);
-                return output.ToString();
-            }
-        }
-        public async Task<string> RenderViewToStringAsync<TModel>(string filename, string name, TModel model)
-        {
-            if (filename == null) throw new ArgumentNullException(nameof(filename));
-            using (var output = new StreamWriter(File.OpenWrite(filename)))
-            {
-                await RenderViewToStreamAsync<TModel>(output, name, model);
-                return output.ToString();
-            }
-        }
-        public async Task RenderViewToStreamAsync<TModel>(TextWriter textWriter, string viewName, TModel model)
-        {
-            if (textWriter == null) throw new ArgumentNullException(nameof(textWriter));
-            if (viewName == null) throw new ArgumentNullException(nameof(viewName));
-            var actionContext = BuildActionContext();
+            actionContext = BuildActionContext();
 
             var viewEngineResult = _viewEngine.FindView(actionContext, viewName, false);
 
@@ -57,9 +41,31 @@ namespace MvcControlsToolkit.JavaScriptServices
                 throw new InvalidOperationException(string.Format(Resources.NoView, viewName));
             }
 
-            var view = viewEngineResult.View;
+            view = viewEngineResult.View;
+            return this;
+        }
+        public async Task<string> RenderViewToStringAsync<TModel>(string name, TModel model)
+        {
+            using(var output = new StringWriter())
+            {
+                await RenderViewToStreamAsync<TModel>(output, model);
+                return output.ToString();
+            }
+        }
+        public async Task<RazorViewRenderer> RenderViewToFileAsync<TModel>(string filename, TModel model)
+        {
+            if (filename == null) throw new ArgumentNullException(nameof(filename));
+            using (var output = new StreamWriter(File.OpenWrite(filename)))
+            {
+                await RenderViewToStreamAsync<TModel>(output, model);
+                return this;
+            }
+        }
+        
+        public async Task<RazorViewRenderer> RenderViewToStreamAsync<TModel>(TextWriter textWriter, TModel model)
+        {
+            if (textWriter == null) throw new ArgumentNullException(nameof(textWriter));
 
-            
             var viewContext = new ViewContext(
                 actionContext,
                 view,
@@ -75,7 +81,8 @@ namespace MvcControlsToolkit.JavaScriptServices
                 textWriter,
                 new HtmlHelperOptions());
 
-            await view.RenderAsync(viewContext);  
+            await view.RenderAsync(viewContext);
+            return this;
         }
         private ActionContext BuildActionContext()
         {
