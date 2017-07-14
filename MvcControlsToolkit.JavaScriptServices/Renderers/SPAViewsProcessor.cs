@@ -9,22 +9,28 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.DependencyInjection;
 using System.Globalization;
 using System.IO;
+using MvcControlsToolkit.JavaScriptServices.Internals;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Hosting;
 
-namespace MvcControlsToolkit.JavaScriptServices.Internals
+namespace MvcControlsToolkit.JavaScriptServices
 {
     internal class SPAViewsProcessor
     {
         private IRazorViewEngine _viewEngine;
         private ITempDataProvider _tempDataProvider;
         private IServiceProvider _serviceProvider;
+        private IModelMetadataProvider _modelMetadataProvider;
         public SPAViewsProcessor(
             IRazorViewEngine viewEngine,
             ITempDataProvider tempDataProvider,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            IModelMetadataProvider modelMetadataProvider)
         {
             _viewEngine = viewEngine;
             _tempDataProvider = tempDataProvider;
             _serviceProvider = serviceProvider;
+            _modelMetadataProvider = modelMetadataProvider;
         }
         private async Task ExecuteWithCulture(Func<Task> toProcess, CultureInfo culture)
         {
@@ -45,9 +51,7 @@ namespace MvcControlsToolkit.JavaScriptServices.Internals
             if (string.IsNullOrEmpty(ext)) fileName = fileName + ("." + culture.Name);
             else
             {
-                fileName = fileName.Substring(0, fileName.Length - ext.Length) +
-                    (culture.Name + "." + ext);
-                
+                fileName = Path.ChangeExtension(fileName, culture.Name+"."+ext);
             }
             return fileName;
         }
@@ -59,7 +63,8 @@ namespace MvcControlsToolkit.JavaScriptServices.Internals
                 (
                     _viewEngine,
                     _tempDataProvider,
-                    interceptor
+                    interceptor,
+                    _modelMetadataProvider
                 );
             renderer.PrepareView(viewName);
             if(localizationOptions!=null 
@@ -88,6 +93,54 @@ namespace MvcControlsToolkit.JavaScriptServices.Internals
                     }
                 }
             }
+        }
+        protected async Task RenderFolderTreeRecAsync(string sourceFolder, 
+            string destinationFolder,
+            string extension)
+        {
+            foreach(var file in Directory.EnumerateFiles(sourceFolder, "*." + extension))
+            {
+                var fileName = Path.GetFileName(file);
+                await RenderViewAsync<object>(
+                    file,
+                    Path.Combine(destinationFolder, Path.ChangeExtension(fileName, "html")),
+                    null
+                    );
+            }
+            foreach(var directory in Directory.EnumerateDirectories(sourceFolder))
+            {
+                var dirName = Path.GetFileName(directory);
+                var destDir = Path.Combine(destinationFolder, dirName);
+                if (!Directory.Exists(destDir)) Directory.CreateDirectory(destDir);
+                await RenderFolderTreeRecAsync(dirName,
+                            destDir,
+                            extension);
+            }
+            
+        }
+        public async Task RenderFolderTreeAsync(string sourceFolder,
+            string destinationFolder = null,
+            string extension = "cshtml")
+        {
+            if (string.IsNullOrEmpty(sourceFolder))
+                throw new ArgumentNullException(nameof(sourceFolder));
+            if (string.IsNullOrEmpty(extension))
+                throw new ArgumentNullException(nameof(extension));
+            if (string.IsNullOrEmpty(destinationFolder))
+                destinationFolder = sourceFolder;
+
+
+            if (!Directory.Exists(sourceFolder))
+                throw new DirectoryNotFoundException(string.Format(Resources.DirectoryNotFound, sourceFolder));
+            if (!Directory.Exists(destinationFolder))
+            {
+                var enclosingDir = Path.GetDirectoryName(destinationFolder);
+                if (!Directory.Exists(enclosingDir))
+                    throw new DirectoryNotFoundException(string.Format(Resources.DirectoryNotFound, enclosingDir));
+                Directory.CreateDirectory(destinationFolder);
+
+            }
+            await RenderFolderTreeRecAsync(sourceFolder, destinationFolder, extension);
         }
     }
 }

@@ -19,16 +19,19 @@ namespace MvcControlsToolkit.JavaScriptServices
         private IRazorViewEngine _viewEngine;
         private ITempDataProvider _tempDataProvider;
         private IServiceProvider _serviceProvider;
+        private IModelMetadataProvider _modelMetadataProvider;
         private ActionContext actionContext;
         IView view;
         public RazorViewRenderer(
             IRazorViewEngine viewEngine,
             ITempDataProvider tempDataProvider,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            IModelMetadataProvider modelMetadataProvider)
         {
             _viewEngine = viewEngine;
             _tempDataProvider = tempDataProvider;
             _serviceProvider = serviceProvider;
+            _modelMetadataProvider = modelMetadataProvider;
         }
         public RazorViewRenderer PrepareView(string viewName)
         {
@@ -69,8 +72,15 @@ namespace MvcControlsToolkit.JavaScriptServices
             var viewContext = new ViewContext(
                 actionContext,
                 view,
+                typeof(TModel) == typeof(object) ?
+                new ViewDataDictionary(
+                    metadataProvider: _modelMetadataProvider,
+                    modelState: new ModelStateDictionary())
+                {
+                    Model = model
+                } :
                 new ViewDataDictionary<TModel>(
-                    metadataProvider: new EmptyModelMetadataProvider(),
+                    metadataProvider: _modelMetadataProvider,
                     modelState: new ModelStateDictionary())
                 {
                     Model = model

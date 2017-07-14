@@ -62,6 +62,15 @@ namespace MvcControlsToolkit.JavaScriptServices {
         }
         
         /// <summary>
+        ///   Cerca una stringa localizzata simile a Couldn&apos;t find directory &apos;{0}&apos;.
+        /// </summary>
+        internal static string DirectoryNotFound {
+            get {
+                return ResourceManager.GetString("DirectoryNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Cerca una stringa localizzata simile a Couldn&apos;t find view &apos;{0}&apos;.
         /// </summary>
         internal static string NoView {

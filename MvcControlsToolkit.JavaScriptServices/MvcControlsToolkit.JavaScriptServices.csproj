@@ -3,11 +3,39 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp1.1</TargetFramework>
   </PropertyGroup>
-
+  <PropertyGroup>
+    <VersionPrefix>0.0.1</VersionPrefix>
+    <VersionSuffix>alpha</VersionSuffix>
+  </PropertyGroup>
+  <PropertyGroup>
+    <Authors>Francesco Abbruzzese;Mvc Controls Toolkit Team</Authors>
+    <Company>Mvc Controls Toolkit Team</Company>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <AssemblyTitle>Mvc Controls Toolkit Core client services</AssemblyTitle>
+    <Description>
+      Mvc Controls Toolkit Core JavaScript, TypeScript, and Html generation services
+    </Description>
+    <Copyright>Mvc Controls Toolkit Team</Copyright>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PackageTags>aspnetcore;aspnetcoremvc</PackageTags>
+    <PackageReleaseNotes>First public release</PackageReleaseNotes>
+    <PackageIconUrl>https://avatars2.githubusercontent.com/u/15634526?v=3</PackageIconUrl>
+    <PackageProjectUrl>https://github.com/MvcControlsToolkit/MvcControlsToolkit.JavaScriptServices</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/MvcControlsToolkit/MvcControlsToolkit.JavaScriptServices/blob/master/LICENSE.txt</PackageLicenseUrl>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/MvcControlsToolkit/MvcControlsToolkit.JavaScriptServices.git</RepositoryUrl>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>../tools/Key.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign Condition="'$(OS)' != 'Windows_NT'">true</PublicSign>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="1.1.1" />
   </ItemGroup>
-
+  
   <ItemGroup>
     <Compile Update="Resources.Designer.cs">
       <DesignTime>True</DesignTime>
